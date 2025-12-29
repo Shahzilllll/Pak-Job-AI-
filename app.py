@@ -7,11 +7,22 @@ from difflib import SequenceMatcher
 import PyPDF2
 import re
 
+# ----------------- Hide Streamlit default footer and menu -----------------
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# ----------------- Page Config -----------------
 st.set_page_config(
     page_title="Pak Job AI",
     layout="wide"
 )
 
+# ----------------- Load Data & Models -----------------
 @st.cache_data(show_spinner=True)
 def load_data_and_models():
     df = pd.read_csv("cleaned_data.csv")
@@ -26,6 +37,7 @@ def load_data_and_models():
 
 df, model, tfidf, tfidf_matrix, le_city, le_dept, gap_df, roadmap_df = load_data_and_models()
 
+# ----------------- Helper Functions -----------------
 def clean_jd(text):
     if not isinstance(text, str):
         return ""
@@ -63,6 +75,7 @@ gap_df["skill"] = gap_df["skill"].apply(normalize_skill)
 roadmap_df["skill"] = roadmap_df["skill"].apply(normalize_skill)
 market_skills = gap_df["skill"].tolist()
 
+# ----------------- App Layout -----------------
 st.title("🚀 Pakistan Job Market: AI Dashboard")
 st.caption("AI-powered insights, job matching, salary prediction & skill gap analysis")
 
@@ -74,9 +87,9 @@ menu = [
 ]
 choice = st.sidebar.radio("Navigation", menu)
 
+# ----------------- Market Insights -----------------
 if choice == "📊 Market Insights":
     st.header("📊 Market Overview")
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -88,9 +101,9 @@ if choice == "📊 Market Insights":
         fig = px.pie(df, names="Department", hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
 
+# ----------------- Job Recommendation -----------------
 elif choice == "🤖 Job Recommendation":
     st.header("🤖 AI Job Finder")
-
     user_input = st.text_input("Enter your skills (e.g., Python, SQL, Data Analysis)")
 
     if st.button("Find Jobs"):
@@ -108,9 +121,9 @@ elif choice == "🤖 Job Recommendation":
         else:
             st.warning("Please enter your skills.")
 
+# ----------------- Salary Estimator -----------------
 elif choice == "💰 Salary Estimator":
     st.header("💰 Salary Predictor")
-
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -126,17 +139,12 @@ elif choice == "💰 Salary Estimator":
         salary = model.predict([[exp, city_code, dept_code]])[0]
         st.success(f"💵 Estimated Salary: Rs. {int(salary):,}")
 
+# ----------------- Skill Gap Analyzer -----------------
 elif choice == "📉 Skill Gap Analyzer":
     st.header("📉 AI Skill Gap Analyzer")
 
-    uploaded_file = st.file_uploader(
-        "Upload your CV (PDF or TXT)",
-        type=["pdf", "txt"]
-    )
-
-    manual_input = st.text_input(
-        "Or enter skills manually (comma separated)"
-    )
+    uploaded_file = st.file_uploader("Upload your CV (PDF or TXT)", type=["pdf", "txt"])
+    manual_input = st.text_input("Or enter skills manually (comma separated)")
 
     student_skills = []
 
